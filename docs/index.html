@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Read-only repository audits for GitHub workflows, environment drift, secrets and lockfiles. One TypeScript engine for your terminal, CI and AI assistant.">
+<meta name="theme-color" content="#10181b">
+<title>CI Guard MCP — Check before you commit.</title>
+<style>
+:root{color-scheme:dark;--bg:#10181b;--surface:#182327;--line:#314146;--text:#eef4ee;--muted:#adbfb9;--accent:#b5ef7c;--warm:#efca88;--mono:ui-monospace,SFMono-Regular,Consolas,monospace}*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:30px}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:inherit;text-underline-offset:4px}a:hover{color:var(--accent)}a:focus-visible,button:focus-visible{outline:3px solid var(--warm);outline-offset:5px}.wrap{max-width:1160px;margin:auto;padding:0 32px}.skip{position:absolute;left:-9999px}.skip:focus{left:24px;top:16px;background:var(--surface);padding:12px;z-index:10}nav{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:28px 0;border-bottom:1px solid var(--line)}.brand{display:flex;align-items:center;gap:12px;text-decoration:none;font:700 17px var(--mono)}.mark{display:grid;place-items:center;width:32px;height:36px;background:var(--accent);color:var(--bg);clip-path:polygon(0 0,100% 0,100% 70%,50% 100%,0 70%)}.navlinks{display:flex;gap:24px;font-size:14px}.navlinks a{text-decoration:none}.hero{display:grid;grid-template-columns:1.05fr 1fr;gap:64px;align-items:center;padding:100px 0 80px}.eyebrow{font:12px var(--mono);color:var(--accent);text-transform:uppercase;letter-spacing:2px}.hero h1{font-size:clamp(44px,5.5vw,72px);line-height:1.05;letter-spacing:-3px;font-weight:650;margin:24px 0}.hero h1 span{color:var(--accent)}.hero p{color:var(--muted);font-size:18px;max-width:490px}.actions{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:32px}.button{display:inline-flex;align-items:center;gap:10px;padding:12px 20px;background:var(--accent);color:var(--bg);font-weight:650;border-radius:5px;text-decoration:none}.button:hover{background:#cdfba1;color:var(--bg)}.secondary{font-size:14px}.note{font:12px/1.7 var(--mono);color:var(--muted);margin-top:20px}.terminal{border:1px solid #486057;border-radius:10px;box-shadow:14px 14px 0 #192b23;overflow:hidden;background:#0d1315}.terminal-top{display:flex;gap:6px;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);font:11px var(--mono);color:var(--muted)}.dot{height:7px;width:7px;background:#586b63;border-radius:50%}.terminal-top span:last-child{margin-left:auto}.terminal pre{font:12px/1.9 var(--mono);margin:0;padding:22px;overflow:auto;white-space:pre}.terminal .green{color:var(--accent)}.terminal .yellow{color:var(--warm)}.terminal .dim{color:#8fa39b}.strip{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;padding:24px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font:12px var(--mono);color:var(--muted)}.strip strong{color:var(--text);font-weight:500}section{padding:78px 0;border-bottom:1px solid var(--line)}.section-heading{display:flex;justify-content:space-between;align-items:end;gap:40px;margin-bottom:32px}h2{font-size:34px;line-height:1.2;letter-spacing:-1px;margin:14px 0 0}.section-heading p{max-width:390px;margin:0;color:var(--muted);font-size:15px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}.card{background:var(--surface);padding:30px;border:1px solid var(--line);border-radius:6px}.number{font:12px var(--mono);color:var(--accent)}h3{font-size:20px;margin:14px 0 10px}.card p{color:var(--muted);margin:0;font-size:15px}.rule{font:12px var(--mono);color:var(--warm);display:block;margin-top:18px}.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}.mode{min-width:0}.mode p{font-size:14px;color:var(--muted)}code{font-family:var(--mono);font-size:.85em}.codebox{background:#0d1315;border:1px solid var(--line);border-radius:5px;padding:20px;overflow:auto;font:12px/1.8 var(--mono);white-space:pre;margin:18px 0}.callout{display:grid;grid-template-columns:1fr 1fr;gap:64px}.callout p{color:var(--muted);font-size:15px}.checks{list-style:none;padding:0;margin:0}.checks li{border-bottom:1px solid var(--line);padding:14px 0;color:var(--muted);font-size:14px}.checks li::before{content:"↳";margin-right:12px;color:var(--accent)}footer{display:flex;justify-content:space-between;gap:24px;padding:30px 0 40px;font:12px/1.7 var(--mono);color:var(--muted)}footer a{margin-left:16px}.release{color:var(--warm)}@media(max-width:850px){.hero{grid-template-columns:1fr;gap:40px;padding:64px 0}.hero h1{max-width:600px}.terminal{max-width:640px}.modes{grid-template-columns:1fr}.callout{gap:32px}.section-heading{display:block}.section-heading p{margin-top:18px}.strip{font-size:11px}}@media(max-width:560px){.wrap{padding:0 22px}.hero h1{letter-spacing:-2px}.navlinks{gap:14px}.navlinks .hide-small{display:none}.grid,.callout{grid-template-columns:1fr}.strip{grid-template-columns:1fr;gap:12px}.card{padding:24px}section{padding:54px 0}.terminal pre{font-size:11px;padding:16px}footer{display:block}footer div{margin-top:16px}footer a{margin:0 16px 0 0}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="wrap">
+<nav aria-label="Main navigation"><a class="brand" href="#"><span class="mark" aria-hidden="true">✓</span>ci-guard-mcp</a><div class="navlinks"><a class="hide-small" href="#auditors">Auditors</a><a href="#integrate">Get started</a><a href="https://github.com/carelessdept/ci-guard-mcp">GitHub ↗</a></div></nav>
+<main id="main">
+<div class="hero"><div><div class="eyebrow">Local-first repository audits</div><h1>Check before<br>you <span>commit.</span></h1><p>Catch risky workflows, configuration drift, and leaked credentials from your terminal, CI pipeline, or AI assistant.</p><div class="actions"><a class="button" href="#integrate">Start auditing <span aria-hidden="true">↗</span></a><a class="secondary" href="https://github.com/carelessdept/ci-guard-mcp#readme">Read the docs</a></div><div class="note">Node 20+ · MIT license · Two runtime dependencies<br><span class="release">v0.1.0 source preview — release setup required</span></div></div>
+<div class="terminal" aria-label="Illustrative audit output"><div class="terminal-top"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span>example audit / terminal</span></div><pre><span class="dim">$</span> node dist/cli.js scan .
+
+<span class="yellow">.github/workflows/deploy.yml:8</span>
+ERROR workflow/script-injection
+  Untrusted event data in a shell script.
+  Pass it through a quoted env variable.
+
+<span class="yellow">src/config.ts:12</span>
+WARN env/undocumented
+  API_URL is absent from an env template.
+
+<span class="green">→ 2 findings. No source uploaded.</span>
+<span class="dim">Illustrative output · values redacted</span></pre></div></div>
+<div class="strip"><div><strong>01 /</strong> Read-only by design</div><div><strong>02 /</strong> Deterministic local checks</div><div><strong>03 /</strong> CLI + Action + MCP</div></div>
+<section id="auditors"><div class="section-heading"><div><div class="eyebrow">Four focused audit engines</div><h2>Small checks. Useful signals.</h2></div><p>Concrete findings with file locations, rule IDs, and a suggested next step. No account or cloud scanner required.</p></div><div class="grid">
+<article class="card"><span class="number">01 / WORKFLOWS</span><h3>Keep CI from becoming an entry point.</h3><p>Spot privileged PR checkouts, mutable action references, missing token permissions, and event expressions interpolated into shell scripts.</p><span class="rule">workflow/pwn-request</span></article>
+<article class="card"><span class="number">02 / ENVIRONMENT</span><h3>Make the required configuration visible.</h3><p>Compare literal environment reads across JS/TS, Python, Go, and Rust against templates, Docker ENV, and Compose declarations.</p><span class="rule">env/undocumented</span></article>
+<article class="card"><span class="number">03 / SECRETS</span><h3>Catch credentials before they travel.</h3><p>Recognize common token formats, private keys, and contextual high-entropy assignments. Scan actual staged blobs and redact every detected value.</p><span class="rule">secret/high-entropy</span></article>
+<article class="card"><span class="number">04 / DEPENDENCIES</span><h3>Keep installs predictable.</h3><p>Find competing lockfiles within a package, unencrypted dependency URLs, and unbounded version selectors such as * and latest.</p><span class="rule">lockfile/conflict</span></article>
+</div></section>
+<section id="integrate"><div class="section-heading"><div><div class="eyebrow">Meet your existing workflow</div><h2>One engine. Three entry points.</h2></div><p>Start from source today. npm commands and remote action references become available after the first release.</p></div><div class="modes">
+<article class="mode"><span class="number">TERMINAL</span><h3>Run a local check.</h3><p>Build the checkout and choose text, JSON, SARIF, or GitHub annotations.</p><pre class="codebox">npm ci --ignore-scripts
+npm run build
+node dist/cli.js scan . \
+  --fail-on warn</pre><a href="https://github.com/carelessdept/ci-guard-mcp#run-locally">CLI usage ↗</a></article>
+<article class="mode"><span class="number">GITHUB ACTION</span><h3>Give each PR a guard.</h3><p>Annotations, a readable job summary, and finding counts from a composite action.</p><pre class="codebox"># Local repository action
+- uses: ./
+  with:
+    path: .
+    fail-on: warn</pre><a href="https://github.com/carelessdept/ci-guard-mcp#github-action">Integration details ↗</a></article>
+<article class="mode"><span class="number">AI ASSISTANTS</span><h3>Audit before an agent commits.</h3><p>Four read-only tools over stdio. Paths stay within the selected launch root.</p><pre class="codebox">node dist/cli.js --mcp \
+  --root /path/to/repo
+
+# scan_repo
+# check_secret_leaks</pre><a href="https://github.com/carelessdept/ci-guard-mcp#mcp-server">MCP configuration ↗</a></article>
+</div></section>
+<section><div class="callout"><div><div class="eyebrow">Clear scope. Reviewable code.</div><h2>A guardrail,<br>with visible boundaries.</h2><p>Static checks cannot prove a repository is safe. Dynamic environment reads, encoded credentials, and remote workflow bodies need other review. Test fixtures and templates are excluded from secret scanning by default.</p><a href="https://github.com/carelessdept/ci-guard-mcp#boundaries-and-limitations">Read the detection limits ↗</a></div><ul class="checks"><li>No repository scripts are executed during scanning.</li><li>Source code stays on the machine running the audit.</li><li>Findings never contain detected secret values.</li><li>Ignore policy and official-action allowlists are configurable.</li><li>Excess-size files produce explicit warnings.</li><li>Open source, without adoption claims or badges for unrun CI.</li></ul></div></section>
+</main><footer><span>ci-guard-mcp / MIT<br>Built for a quieter, safer review.</span><div><a href="https://github.com/carelessdept/ci-guard-mcp/blob/main/CONTRIBUTING.md">Contribute</a><a href="https://github.com/carelessdept/ci-guard-mcp/blob/main/SECURITY.md">Security</a><a href="https://github.com/carelessdept/ci-guard-mcp">Source ↗</a></div></footer>
+</div>
+</body>
+</html>

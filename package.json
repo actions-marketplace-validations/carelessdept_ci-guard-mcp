@@ -1,0 +1,63 @@
+{
+  "name": "ci-guard-mcp",
+  "version": "0.1.0",
+  "description": "Local-first repository security and configuration audits for developers, CI and AI assistants.",
+  "type": "module",
+  "bin": {
+    "ci-guard-mcp": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "SECURITY.md",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json",
+    "test": "node --import tsx --test test/env-drift.test.ts test/integration.test.ts test/lockfile.test.ts test/mcp-server.test.ts test/secrets.test.ts test/workflows.test.ts",
+    "check": "npm run typecheck && npm test && npm run build",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "ignore": "7.0.5",
+    "yaml": "2.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.18.6",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/carelessdept/ci-guard-mcp.git"
+  },
+  "homepage": "https://carelessdept.github.io/ci-guard-mcp/",
+  "bugs": {
+    "url": "https://github.com/carelessdept/ci-guard-mcp/issues"
+  },
+  "license": "MIT",
+  "keywords": [
+    "security",
+    "github-actions",
+    "mcp",
+    "secrets",
+    "environment",
+    "sarif"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

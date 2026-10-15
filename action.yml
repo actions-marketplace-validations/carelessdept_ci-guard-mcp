@@ -1,0 +1,53 @@
+name: CI Guard MCP
+description: Audit workflow security, environment drift, secrets and lockfile hygiene locally in CI.
+author: carelessdept
+branding:
+  icon: shield
+  color: blue
+inputs:
+  path:
+    description: Repository directory to audit, relative to the workspace
+    default: .
+  fail-on:
+    description: Finding threshold (error or warn)
+    default: error
+outputs:
+  errors:
+    description: Number of error findings
+    value: ${{ steps.scan.outputs.errors }}
+  warnings:
+    description: Number of warning findings
+    value: ${{ steps.scan.outputs.warnings }}
+  findings:
+    description: Total number of findings
+    value: ${{ steps.scan.outputs.findings }}
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      with:
+        node-version: '22'
+    - name: Build isolated action runtime
+      shell: bash
+      env:
+        ACTION_SOURCE: ${{ github.action_path }}
+        ACTION_RUNTIME: ${{ runner.temp }}/ci-guard-action-${{ github.run_id }}-${{ github.run_attempt }}
+      run: |
+        set -euo pipefail
+        mkdir -p "$ACTION_RUNTIME"
+        cp "$ACTION_SOURCE/package.json" "$ACTION_SOURCE/package-lock.json" "$ACTION_SOURCE/tsconfig.json" "$ACTION_RUNTIME/"
+        cp -R "$ACTION_SOURCE/src" "$ACTION_RUNTIME/src"
+        cd "$ACTION_RUNTIME"
+        npm ci --ignore-scripts --no-audit --no-fund
+        npm run build
+    - name: Audit repository
+      id: scan
+      shell: bash
+      env:
+        INPUT_PATH: ${{ inputs.path }}
+        FAIL_ON: ${{ inputs.fail-on }}
+        ACTION_RUNTIME: ${{ runner.temp }}/ci-guard-action-${{ github.run_id }}-${{ github.run_attempt }}
+      run: |
+        set -euo pipefail
+        node "$ACTION_RUNTIME/dist/cli.js" scan "$INPUT_PATH" --format github --fail-on "$FAIL_ON"
