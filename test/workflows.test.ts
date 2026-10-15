@@ -36,3 +36,7 @@ test('resolves YAML anchors and avoids treating event_name as untrusted event co
   const f = audit(body);
   assert.equal(f.length, 1); assert.equal(f[0]!.ruleId, 'workflow/script-injection');
 });
+test('expression scanning tolerates repeated incomplete delimiters and multiple expressions', () => {
+  assert.equal(audit(`permissions: {}\njobs:\n  a:\n    steps:\n      - run: '${'${{'.repeat(10000)}'\n`).length, 0);
+  assert.ok(audit('permissions: {}\njobs: {a: {steps: [{run: "echo ${{ github.event_name }} ${{ github.head_ref }}"}]}}').some(f => f.ruleId === 'workflow/script-injection'));
+});

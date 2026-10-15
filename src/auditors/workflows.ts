@@ -5,8 +5,19 @@ function baseGet(node: unknown, key: string): unknown { return isMap(node) ? nod
 function baseScalar(node: unknown): string { return isScalar(node) ? String(node.value ?? '') : ''; }
 function baseValues(node: unknown): unknown[] { return isMap(node) ? node.items.map(p => p.value) : isSeq(node) ? node.items : []; }
 function isUntrusted(value: string): boolean {
-  return /\$\{\{[\s\S]*?(?:github\s*(?:\.\s*(?:event|head_ref)\b|\[\s*['"](?:event|head_ref)['"]\s*\]))[\s\S]*?\}\}/i.test(value);
+  let cursor = 0;
+  while (cursor < value.length) {
+    const start = value.indexOf('${{', cursor);
+    if (start < 0) return false;
+    const end = value.indexOf('}}', start + 3);
+    if (end < 0) return false;
+    const expression = value.slice(start + 3, end);
+    if (/\bgithub\s*(?:\.\s*(?:event|head_ref)\b|\[\s*['"](?:event|head_ref)['"]\s*\])/i.test(expression)) return true;
+    cursor = end + 2;
+  }
+  return false;
 }
+
 export function auditWorkflows({ files, config }: AuditContext): Finding[] {
   const findings: Finding[] = [];
   for (const file of files.filter(f => /^\.github\/workflows\/[^/]+\.ya?ml$/.test(f.path))) {

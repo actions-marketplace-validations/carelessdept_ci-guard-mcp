@@ -150,8 +150,10 @@ npm pack --dry-run
 
 CI runs tests/typechecks/build/package checks on Node 20 and 22 across Linux, macOS and Windows. See [CONTRIBUTING.md](CONTRIBUTING.md) for regression tests and [SECURITY.md](SECURITY.md) for disclosure.
 
-Before first release: create the npm package under an authorized npm account, verify name availability, configure its trusted publisher for owner `carelessdept`, repo `ci-guard-mcp`, workflow `release.yml`, environment `npm`, and protect that environment in GitHub. Initial package creation may require a manual authenticated npm publish before trusted publishing can be configured. Thereafter a matching `v<package.version>` tag runs checks, publishes with OIDC/provenance, and creates a GitHub Release. If publication succeeds but release creation fails, create the release for that tag manually; npm versions cannot be republished.
+Before first release: create the npm package under an authorized npm account, verify name availability, configure its trusted publisher for owner `carelessdept`, repo `ci-guard-mcp`, workflow `release.yml`, environment `npm`, allow direct `npm publish` in the trusted publisher settings, and protect that environment in GitHub. Initial package creation may require a manual authenticated npm publish before trusted publishing can be configured. Thereafter a matching `v<package.version>` tag runs checks, publishes with OIDC/provenance, and creates a GitHub Release. If publication succeeds but release creation fails, create the release for that tag manually; npm versions cannot be republished.
 
 Publish the action to Marketplace from GitHub's release UI after reviewing metadata and eligibility. Enable Pages from the default branch's `/docs` directory for the documentation site. These account-side enrollment steps are not performed by source code or the tag workflow. No npm credentials or grant applications belong in this repository.
 
 MIT licensed. Maintained openly through reproducible reports, focused changes and documented limitations.
+
+Protocol and release references: [MCP stdio](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports), [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/), [Marketplace publishing](https://docs.github.com/en/actions/how-tos/create-and-publish-actions/publish-in-github-marketplace).

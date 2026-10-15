@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { Config } from './types.js';
 import { safeFile } from './files.js';
@@ -24,8 +24,8 @@ export function validateConfig(value: unknown): Partial<Config> {
 }
 async function jsonFile(root: string, name: string): Promise<unknown> {
   if (!await safeFile(root, name)) return undefined;
+  if ((await stat(path.join(root, name))).size > 1_048_576) throw new Error(`Configuration too large: ${name}`);
   const raw = await readFile(path.join(root, name), 'utf8');
-  if (Buffer.byteLength(raw) > 1_048_576) throw new Error(`Configuration too large: ${name}`);
   try { return JSON.parse(raw); } catch { throw new Error(`Invalid JSON in ${name}`); }
 }
 export async function loadConfig(root: string, override: Partial<Config> = {}): Promise<Config> {
