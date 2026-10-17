@@ -37,11 +37,15 @@ export function auditEnvDrift({ files, config }: AuditContext): Finding[] {
       if (doc.errors.length) {
         findings.push({ ruleId: 'env/invalid-compose', severity: 'error', file: f.path, line: 1, message: 'Compose file contains invalid YAML.', suggestion: 'Fix Compose YAML before checking environment drift.' });
       } else {
-        const obj = doc.toJS({ maxAliasCount: 100 }) as { services?: Record<string, { environment?: Record<string, unknown> | unknown[] }> } | null;
-        for (const service of Object.values(obj?.services ?? {})) {
-          const env = service?.environment;
-          if (Array.isArray(env)) for (const v of env) { if (typeof v === 'string') deployed.add(v.split('=')[0]!); }
-          else if (env && typeof env === 'object') for (const key of Object.keys(env)) deployed.add(key);
+        try {
+          const obj = doc.toJS({ maxAliasCount: 100 }) as { services?: Record<string, { environment?: Record<string, unknown> | unknown[] }> } | null;
+          for (const service of Object.values(obj?.services ?? {})) {
+            const env = service?.environment;
+            if (Array.isArray(env)) for (const v of env) { if (typeof v === 'string') deployed.add(v.split('=')[0]!); }
+            else if (env && typeof env === 'object') for (const key of Object.keys(env)) deployed.add(key);
+          }
+        } catch {
+          findings.push({ ruleId: 'env/invalid-compose', severity: 'error', file: f.path, line: 1, message: 'Compose file contains excessive YAML alias expansion or invalid structure.', suggestion: 'Reduce YAML alias nesting and fix Compose structure before checking environment drift.' });
         }
       }
     }

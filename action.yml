@@ -29,13 +29,15 @@ runs:
       with:
         node-version: '22'
     - name: Build isolated action runtime
+      id: build
       shell: bash
       env:
         ACTION_SOURCE: ${{ github.action_path }}
-        ACTION_RUNTIME: ${{ runner.temp }}/ci-guard-action-${{ github.run_id }}-${{ github.run_attempt }}
+        RUNNER_TEMP_DIR: ${{ runner.temp }}
       run: |
         set -euo pipefail
-        mkdir -p "$ACTION_RUNTIME"
+        ACTION_RUNTIME="$(mktemp -d "${RUNNER_TEMP_DIR:-/tmp}/ci-guard-action.XXXXXX")"
+        echo "runtime=$ACTION_RUNTIME" >> "$GITHUB_OUTPUT"
         cp "$ACTION_SOURCE/package.json" "$ACTION_SOURCE/package-lock.json" "$ACTION_SOURCE/tsconfig.json" "$ACTION_RUNTIME/"
         cp -R "$ACTION_SOURCE/src" "$ACTION_RUNTIME/src"
         cd "$ACTION_RUNTIME"
@@ -47,7 +49,8 @@ runs:
       env:
         INPUT_PATH: ${{ inputs.path }}
         FAIL_ON: ${{ inputs.fail-on }}
-        ACTION_RUNTIME: ${{ runner.temp }}/ci-guard-action-${{ github.run_id }}-${{ github.run_attempt }}
+        ACTION_RUNTIME: ${{ steps.build.outputs.runtime }}
       run: |
         set -euo pipefail
+        trap 'rm -rf "$ACTION_RUNTIME"' EXIT
         node "$ACTION_RUNTIME/dist/cli.js" scan "$INPUT_PATH" --format github --fail-on "$FAIL_ON"

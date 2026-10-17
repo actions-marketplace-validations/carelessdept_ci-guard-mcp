@@ -27,3 +27,18 @@ test('compose mapping and legacy/multiline Docker ENV declarations count as cons
 test('invalid compose produces explicit error', () => {
   assert.equal(auditEnvDrift(context({ 'compose.yaml': 'services: [' }))[0]!.ruleId, 'env/invalid-compose');
 });
+test('A6: excessive YAML alias expansion in compose emits env/invalid-compose without aborting other auditors', async t => {
+  const { scan } = await import('../src/index.js');
+  const { repo } = await import('./helpers.js');
+  const lines = ['a0: &a0 [1, 1]'];
+  for (let i = 1; i <= 8; i++) lines.push(`a${i}: &a${i} [*a${i - 1}, *a${i - 1}, *a${i - 1}]`);
+  lines.push('services:\n  app:\n    environment: *a8\n');
+  const root = await repo(t, {
+    'docker-compose.yml': lines.join('\n'),
+    'key.txt': 'AKIA' + 'Z4M8Q2W6E9R3T7Y1',
+  });
+  const report = await scan({ root });
+  assert.ok(report.findings.some(f => f.ruleId === 'env/invalid-compose'));
+  assert.ok(report.findings.some(f => f.ruleId === 'secret/aws'));
+});
+

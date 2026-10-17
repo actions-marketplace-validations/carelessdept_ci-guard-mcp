@@ -40,3 +40,12 @@ test('expression scanning tolerates repeated incomplete delimiters and multiple 
   assert.equal(audit(`permissions: {}\njobs:\n  a:\n    steps:\n      - run: '${'${{'.repeat(10000)}'\n`).length, 0);
   assert.ok(audit('permissions: {}\njobs: {a: {steps: [{run: "echo ${{ github.event_name }} ${{ github.head_ref }}"}]}}').some(f => f.ruleId === 'workflow/script-injection'));
 });
+test('A3: quoted closing braces and escaped single quotes do not bypass workflow expression inspection', () => {
+  const bypassAttempt = `permissions: {}\non: issues\njobs:\n  a:\n    steps:\n      - run: echo "\${{ format('}}{0}', github.event.issue.title) }}"\n      - run: echo "\${{ format('it''s }}{0}', github.event.issue.body) }}"\n`;
+  const findings = audit(bypassAttempt).filter(f => f.ruleId === 'workflow/script-injection');
+  assert.equal(findings.length, 2);
+
+  const safeCases = `permissions: {}\non: pull_request\njobs:\n  a:\n    steps:\n      - run: echo "\${{ 'github.event.issue.title' }}"\n      - run: echo "\${{ github.event.pull_request.number }}"\n      - run: echo "\${{ github.event.issue.number }}"\n`;
+  assert.deepEqual(audit(safeCases), []);
+});
+

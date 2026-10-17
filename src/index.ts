@@ -19,8 +19,9 @@ export async function scan(options: ScanOptions = {}): Promise<AuditReport> {
   const selected = options.auditors ?? [...AUDITORS];
   if (!selected.every(a => AUDITORS.includes(a))) throw new Error('Unknown auditor');
   if (options.staged && (selected.length !== 1 || selected[0] !== 'secrets')) throw new Error('Staged mode supports only the secrets auditor; use --auditor secrets --staged');
-  const config = await loadConfig(root, options.config);
-  const { files, warnings } = await collectFiles(root, config, options.staged ?? false, options.includeIgnored ?? false);
+  const staged = options.staged ?? false;
+  const config = await loadConfig(root, options.config, staged);
+  const { files, warnings } = await collectFiles(root, config, staged, options.includeIgnored ?? false);
   // Normal secret scans inspect tracked content when this is a Git root. Other engines also inspect untracked source.
   const tracked = !options.staged && selected.includes('secrets') && await isGitRoot(root)
     ? new Set((await git(root, ['ls-files', '-z'])).split('\0')) : undefined;

@@ -52,3 +52,52 @@ test('staged ignore rules come from the index and renamed files scan under their
   git(root, 'rm', '--cached', 'new.txt');
   assert.equal((await scan({ root, staged: true, auditors: ['secrets'] })).summary.error, 0);
 });
+test('A1: hardened Git invocation blocks core.fsmonitor hook execution during normal and staged scans', async t => {
+  const { chmod, access } = await import('node:fs/promises');
+  const root = await repo(t, { 'key.txt': tokens[0]![1]! });
+  const marker = path.join(root, 'fsmonitor-invoked.txt');
+  const hook = path.join(root, 'monitor.sh');
+  await writeFile(hook, `#!/bin/sh\necho invoked > "${marker}"\n`);
+  await chmod(hook, 0o755);
+  git(root, 'init', '-q');
+  git(root, 'add', 'key.txt');
+  git(root, 'config', 'core.fsmonitor', hook);
+
+  const normalReport = await scan({ root, auditors: ['secrets'] });
+  assert.equal(normalReport.summary.error, 1);
+  const stagedReport = await scan({ root, staged: true, auditors: ['secrets'] });
+  assert.equal(stagedReport.summary.error, 1);
+
+  await assert.rejects(access(marker), /ENOENT/);
+});
+test('A2: unstaged .ciguardrc.json cannot suppress staged credential findings', async t => {
+  const root = await repo(t, { 'key.txt': tokens[0]![1]! });
+  git(root, 'init', '-q');
+  git(root, 'add', 'key.txt');
+  assert.equal((await scan({ root, staged: true, auditors: ['secrets'] })).summary.error, 1);
+
+  // Create untracked working-tree policy disabling secret/aws
+  await writeFile(path.join(root, '.ciguardrc.json'), '{"disabledRules":["secret/aws"]}');
+  assert.equal((await scan({ root, staged: true, auditors: ['secrets'] })).summary.error, 1);
+
+  // Once the policy itself is staged in the index, staged scan honors it
+  git(root, 'add', '.ciguardrc.json');
+  assert.equal((await scan({ root, staged: true, auditors: ['secrets'] })).summary.error, 0);
+});
+test('A4: provider tokens containing substring fragments like fake or dummy are still detected', () => {
+  const ghWithFake = `ghp_${'aB9z'.repeat(4)}fake${'aB9z'.repeat(4)}`;
+  const stripeWithDummy = `sk_live_${'aB9z'.repeat(2)}dummy${'aB9z'.repeat(2)}`;
+  const findings = auditSecrets(context({ 'prod.env': `${ghWithFake}\n${stripeWithDummy}\nAKIAIOSFODNN7EXAMPLE\n` }));
+  assert.deepEqual(findings.map(f => f.ruleId), ['secret/github', 'secret/stripe']);
+});
+test('A5: oversized staged blobs are skipped via size check before loading and emit scan/skipped-file', async t => {
+  const root = await repo(t, { 'huge.txt': 'x'.repeat(2048), 'small.txt': tokens[0]![1]! });
+  git(root, 'init', '-q');
+  git(root, 'add', 'huge.txt', 'small.txt');
+  const report = await scan({ root, staged: true, auditors: ['secrets'], config: { maxFileBytes: 1024 } });
+  assert.deepEqual(report.findings.map(f => `${f.file}:${f.ruleId}`).sort(), [
+    'huge.txt:scan/skipped-file',
+    'small.txt:secret/aws',
+  ]);
+});
+

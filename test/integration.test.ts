@@ -70,3 +70,29 @@ test('MCP CLI is a clean stdio subprocess with working initialization and EOF sh
   child.stdin.end(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'client', version: '1' } } }) + '\n');
   assert.equal(await done, 0, stderr); assert.equal(JSON.parse(stdout).result.protocolVersion, '2024-11-05');
 });
+test('A7: dense token matches scale linearly with accurate line numbers', async t => {
+  const count = 2000;
+  const line = `AKIA${'Z4M8Q2W6E9R3T7Y1'}\n`;
+  const root = await repo(t, { 'dense.txt': line.repeat(count) });
+  const start = performance.now();
+  const report = await scan({ root, auditors: ['secrets'] });
+  const elapsed = performance.now() - start;
+  assert.equal(report.findings.length, count);
+  assert.equal(report.findings[0]!.line, 1);
+  assert.equal(report.findings[count - 1]!.line, count);
+  assert.ok(elapsed < 1500, `Expected linear scan under 1500ms, took ${elapsed.toFixed(1)}ms`);
+});
+test('A8: missing or broken git in a directory with .git metadata fails closed instead of silently scanning untracked files', async t => {
+  const root = await repo(t, { 'untracked.txt': 'AKIA' + 'Z4M8Q2W6E9R3T7Y1' });
+  await mkdir(path.join(root, '.git'));
+  await assert.rejects(scan({ root, auditors: ['secrets'] }), /Git repository metadata found at scan root, but git execution failed/);
+
+  const prevPath = process.env.PATH;
+  process.env.PATH = '';
+  try {
+    await assert.rejects(scan({ root, auditors: ['secrets'] }), /Git repository metadata found at scan root, but git execution failed/);
+  } finally {
+    process.env.PATH = prevPath;
+  }
+});
+
