@@ -26,11 +26,13 @@ test('staged mode reads index rather than working copy and skips deletion/symlin
   await symlink('key.txt', path.join(root, 'link')); git(root, 'add', 'link');
   assert.equal((await scan({ root, staged: true, auditors: ['secrets'] })).summary.error, 1);
 });
-test('normal Git scans ignore untracked credentials and honor gitignore', async t => {
+test('normal Git scans ignore untracked credentials, honor gitignore by default, and scan tracked gitignored files when includeIgnored is enabled', async t => {
   const root = await repo(t, { '.gitignore': 'ignored.txt\n', 'tracked.txt': tokens[0]![1]!, 'untracked.txt': tokens[0]![1]!, 'ignored.txt': tokens[0]![1]! });
-  git(root, 'init', '-q'); git(root, 'add', 'tracked.txt', '.gitignore');
+  git(root, 'init', '-q'); git(root, 'add', 'tracked.txt', '.gitignore'); git(root, 'add', '-f', 'ignored.txt');
   const report = await scan({ root, auditors: ['secrets'] });
   assert.deepEqual(report.findings.map(f => f.file), ['tracked.txt']);
+  const withIgnored = await scan({ root, includeIgnored: true, auditors: ['secrets'] });
+  assert.deepEqual(withIgnored.findings.map(f => f.file).sort(), ['ignored.txt', 'tracked.txt']);
 });
 test('staged mode refuses a non-Git root and mixed auditors', async t => {
   const root = await repo(t);

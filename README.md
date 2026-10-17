@@ -20,6 +20,7 @@ npx ci-guard-mcp scan . --format json
 npx ci-guard-mcp scan . --format sarif > findings.sarif
 npx ci-guard-mcp scan . --auditor workflows --auditor lockfile
 npx ci-guard-mcp scan . --auditor secrets --staged
+npx ci-guard-mcp scan . --auditor secrets --include-ignored
 
 # Or from a local source checkout:
 npm ci --ignore-scripts
@@ -27,7 +28,7 @@ npm run build
 node dist/cli.js scan .
 ```
 
-Exit codes: **0** below threshold, **1** findings at or above threshold, **2** invalid arguments, configuration or I/O failure. `--fail-on error` is the default; `warn` also fails on warnings. Informational findings never fail a scan. Output formats are `text`, `json`, `sarif`, and `github`. `--root PATH` is equivalent to the positional scan directory. `--help` lists every flag.
+Exit codes: **0** below threshold, **1** findings at or above threshold, **2** invalid arguments, configuration or I/O failure. `--fail-on error` is the default; `warn` also fails on warnings. Informational findings never fail a scan. Output formats are `text`, `json`, `sarif`, and `github`. `--root PATH` is equivalent to the positional scan directory. `--include-ignored` audits tracked files even when they match `.gitignore` rules (for example, a `.env` committed before `.gitignore` was added). `--help` lists every flag.
 
 Staged mode is intentionally limited to secrets: it reads entire changed index blobs, including renamed/added files, so unstaged edits cannot conceal a staged credential. It applies ignore rules from the index and skips deletions, symlinks and submodules. Other audits need the repository-wide context and cannot be combined with `--staged`.
 
@@ -77,10 +78,10 @@ For a source checkout, use `"command": "node"` and `"args": ["/absolute/path/to/
 
 | Tool | Behavior | Arguments |
 | --- | --- | --- |
-| `scan_repo` | All four auditors | `path?: string` |
+| `scan_repo` | All four auditors | `path?: string`, `includeIgnored?: boolean` |
 | `check_env_drift` | Environment and deployment drift | `path?: string` |
 | `audit_github_workflows` | Workflow security | `path?: string` |
-| `check_secret_leaks` | Redacted credential findings | `path?: string`, `staged?: boolean` |
+| `check_secret_leaks` | Redacted credential findings | `path?: string`, `staged?: boolean`, `includeIgnored?: boolean` |
 
 Paths resolve inside the launch root; parent traversal and symlinks escaping it are rejected. Responses contain text JSON plus `structuredContent` with the same report. Invalid tool arguments are JSON-RPC errors; execution failures use `isError: true`. Stdout contains only protocol messages. Frames over 1 MiB are rejected, and the server recovers at the next newline. Requests are serialized to keep memory use and ordering predictable; scans complete before the next queued request, so cancellation notifications do not interrupt an active audit.
 
@@ -106,7 +107,7 @@ Paths resolve inside the launch root; parent traversal and symlinks escaping it 
 
 Environment patterns support `process.env.X`, bracket syntax, `import.meta.env.X`, Python `os.environ[...]` / `.get(...)` / `os.getenv(...)`, Go `os.Getenv(...)`, and Rust `std::env::var(...)` / `env::var(...)`. Templates and declarations are aggregated across the scan root. Docker `ENV` and Compose `environment` entries count as consumers; deployment-only variables still require documentation when source references them. Tests/fixtures are excluded from source reference extraction.
 
-Secrets use known prefixes and contextual entropy (at least 24 characters, Shannon entropy ≥4.3 bits/character). Values and source snippets are never included in findings, SARIF or MCP results. In a Git root, normal secret audits read tracked working-tree files; untracked files are skipped. Without Git, all eligible files are scanned. Other auditors include untracked files. `.gitignore` and nested ignore rules are respected, alongside built-in dependency/build-directory exclusions. Symlinks and NUL-containing binary files are skipped.
+Secrets use known prefixes and contextual entropy (at least 24 characters, Shannon entropy ≥4.3 bits/character). Values and source snippets are never included in findings, SARIF or MCP results. In a Git root, normal secret audits read tracked working-tree files; untracked files are skipped. Without Git, all eligible files are scanned. Other auditors include untracked files. `.gitignore` and nested ignore rules are respected by default (pass `--include-ignored` or `includeIgnored: true` to force-scan tracked files matching `.gitignore`), alongside built-in dependency/build-directory exclusions. Symlinks and NUL-containing binary files are skipped.
 
 ## Configuration
 
@@ -140,7 +141,7 @@ Named auditor functions accept `{ files: [{ path, content }], config }` for in-m
 
 This is a static heuristic auditor, not a proof of security or a credential validity checker. It does not execute code, resolve computed environment names, follow calls across files, inspect Git history, decrypt files, audit remote reusable workflow bodies, or analyze dependency vulnerabilities. YAML workflow checks inspect local structured steps and job-level reusable workflow references. Event-derived values passed through intermediate expressions or files can evade direct interpolation checks. Literal environment patterns can match commented examples or strings. Dead-template notices are advisory because external consumers and dynamic reads are invisible.
 
-Default secret exclusions deliberately reduce noise in tests/templates; replace `secretIgnore` with `[]` for broader coverage. Synthetic tokens that look real can still be reported, and unknown/low-entropy/encoded credentials can be missed. Tracked files ignored by `.gitignore` are excluded in a normal scan. Binary lockfiles are skipped as binary content. Package-specific environment scopes are not inferred; scan a package directory separately for isolated drift checks. Repository configuration is trusted local policy, so review config and ignore changes in pull requests. Do not use the MCP launch root as an OS-level sandbox against a concurrently malicious local process.
+Default secret exclusions deliberately reduce noise in tests/templates; replace `secretIgnore` with `[]` for broader coverage. Synthetic tokens that look real can still be reported, and unknown/low-entropy/encoded credentials can be missed. Tracked files ignored by `.gitignore` are excluded in a normal scan unless `--include-ignored` (`includeIgnored: true`) is passed. Binary lockfiles are skipped as binary content. Package-specific environment scopes are not inferred; scan a package directory separately for isolated drift checks. Repository configuration is trusted local policy, so review config and ignore changes in pull requests. Do not use the MCP launch root as an OS-level sandbox against a concurrently malicious local process.
 
 ## Development and release
 

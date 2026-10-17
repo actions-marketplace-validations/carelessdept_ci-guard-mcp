@@ -33,7 +33,7 @@ export async function isGitRoot(root: string): Promise<boolean> {
   }
   catch { return false; }
 }
-export async function collectFiles(root: string, config: Config, staged: boolean): Promise<{ files: SourceFile[]; warnings: Finding[] }> {
+export async function collectFiles(root: string, config: Config, staged: boolean, includeIgnored = false): Promise<{ files: SourceFile[]; warnings: Finding[] }> {
   const files: SourceFile[] = [], warnings: Finding[] = [];
   const custom = ignore().add(config.ignore);
   const warn = (p: string, message: string) => warnings.push({ ruleId: 'scan/skipped-file', severity: 'warn', file: p, line: 1, message, suggestion: 'Inspect this file separately or increase maxFileBytes.' });
@@ -54,11 +54,13 @@ export async function collectFiles(root: string, config: Config, staged: boolean
     const names = (await git(root, ['diff', '--cached', '--name-only', '--diff-filter=ACMR', '-z'])).split('\0').filter(Boolean);
     const modes = new Map((await git(root, ['ls-files', '--stage', '-z'])).split('\0').filter(Boolean).map(row => [row.slice(row.indexOf('\t') + 1), row.slice(0, 6)]));
     const indexIgnores: { base: string; matcher: ReturnType<typeof ignore> }[] = [];
-    for (const [p, mode] of [...modes].sort(([a], [b]) => a.split('/').length - b.split('/').length)) {
-      if (path.posix.basename(p) !== '.gitignore' || !['100644', '100755'].includes(mode)) continue;
-      const content = await git(root, ['show', `:${p}`]);
-      if (Buffer.byteLength(content) > config.maxFileBytes) { warn(p, 'Index ignore file exceeds the configured size limit.'); continue; }
-      indexIgnores.push({ base: path.posix.dirname(p), matcher: ignore().add(content) });
+    if (!includeIgnored) {
+      for (const [p, mode] of [...modes].sort(([a], [b]) => a.split('/').length - b.split('/').length)) {
+        if (path.posix.basename(p) !== '.gitignore' || !['100644', '100755'].includes(mode)) continue;
+        const content = await git(root, ['show', `:${p}`]);
+        if (Buffer.byteLength(content) > config.maxFileBytes) { warn(p, 'Index ignore file exceeds the configured size limit.'); continue; }
+        indexIgnores.push({ base: path.posix.dirname(p), matcher: ignore().add(content) });
+      }
     }
     for (const p of names.sort()) {
       if (modes.get(p) !== '100644' && modes.get(p) !== '100755') continue;
@@ -70,13 +72,13 @@ export async function collectFiles(root: string, config: Config, staged: boolean
         if (check.ignored) ignored = true;
         if (check.unignored) ignored = false;
       }
-      if (!ignored) await add(p, true);
+      if (includeIgnored || !ignored) await add(p, true);
     }
   } else {
     async function walk(dir: string, inherited: { base: string; matcher: ReturnType<typeof ignore> }[]) {
       const rules = [...inherited];
       const name = dir ? `${dir}/.gitignore` : '.gitignore';
-      if (await safeFile(root, name)) rules.push({ base: dir, matcher: ignore().add(await readFile(path.join(root, name), 'utf8')) });
+      if (!includeIgnored && await safeFile(root, name)) rules.push({ base: dir, matcher: ignore().add(await readFile(path.join(root, name), 'utf8')) });
       const entries = await readdir(path.join(root, dir), { withFileTypes: true });
       for (const entry of entries.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0)) {
         const p = dir ? `${dir}/${entry.name}` : entry.name;
@@ -89,7 +91,7 @@ export async function collectFiles(root: string, config: Config, staged: boolean
           if (check.ignored) ignored = true;
           if (check.unignored) ignored = false;
         }
-        if (ignored) continue;
+        if (!includeIgnored && ignored) continue;
         if (entry.isDirectory()) await walk(p, rules);
         else if (entry.isFile()) await add(p);
       }

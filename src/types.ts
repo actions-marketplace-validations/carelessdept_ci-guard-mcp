@@ -28,6 +28,7 @@ export interface AuditContext { files: SourceFile[]; config: Config }
 export interface ScanOptions {
   root?: string;
   staged?: boolean;
+  includeIgnored?: boolean;
   auditors?: Auditor[];
   config?: Partial<Config>;
 }
