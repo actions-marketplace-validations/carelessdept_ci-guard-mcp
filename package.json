@@ -2,6 +2,7 @@
   "name": "ci-guard-mcp",
   "version": "0.1.0",
   "description": "Local-first repository security and configuration audits for developers, CI and AI assistants.",
+  "mcpName": "io.github.carelessdept/ci-guard-mcp",
   "type": "module",
   "bin": {
     "ci-guard-mcp": "dist/cli.js"
@@ -16,6 +17,7 @@
   },
   "files": [
     "dist",
+    "server.json",
     "README.md",
     "LICENSE",
     "SECURITY.md",

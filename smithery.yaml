@@ -1,0 +1,19 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      root:
+        type: string
+        description: Optional repository directory path to constrain MCP audit scope.
+    additionalProperties: false
+  commandFunction:
+    |-
+    (config) => ({
+      command: 'node',
+      args: config && config.root
+        ? ['dist/cli.js', '--mcp', '--root', config.root]
+        : ['dist/cli.js', '--mcp']
+    })
+  exampleConfig: {}

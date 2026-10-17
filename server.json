@@ -1,0 +1,28 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "io.github.carelessdept/ci-guard-mcp",
+  "description": "Local-first static repository security and configuration drift auditor (CLI, GitHub Action & MCP).",
+  "repository": {
+    "url": "https://github.com/carelessdept/ci-guard-mcp",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registry_type": "npm",
+      "registry_base_url": "https://registry.npmjs.org",
+      "identifier": "ci-guard-mcp",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "package_arguments": [
+        {
+          "type": "named",
+          "name": "--mcp",
+          "description": "Start the JSON-RPC 2.0 Model Context Protocol server over stdio"
+        }
+      ]
+    }
+  ]
+}
