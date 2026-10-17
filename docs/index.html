@@ -15,8 +15,8 @@
 <div class="wrap">
 <nav aria-label="Main navigation"><a class="brand" href="#"><span class="mark" aria-hidden="true">✓</span>ci-guard-mcp</a><div class="navlinks"><a class="hide-small" href="#auditors">Auditors</a><a href="#integrate">Get started</a><a href="https://github.com/carelessdept/ci-guard-mcp">GitHub ↗</a></div></nav>
 <main id="main">
-<div class="hero"><div><div class="eyebrow">Local-first repository audits</div><h1>Check before<br>you <span>commit.</span></h1><p>Catch risky workflows, configuration drift, and leaked credentials from your terminal, CI pipeline, or AI assistant.</p><div class="actions"><a class="button" href="#integrate">Start auditing <span aria-hidden="true">↗</span></a><a class="secondary" href="https://github.com/carelessdept/ci-guard-mcp#readme">Read the docs</a></div><div class="note">Node 20+ · MIT license · Two runtime dependencies<br><span class="release">v0.1.0 source preview — release setup required</span></div></div>
-<div class="terminal" aria-label="Illustrative audit output"><div class="terminal-top"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span>example audit / terminal</span></div><pre><span class="dim">$</span> node dist/cli.js scan .
+<div class="hero"><div><div class="eyebrow">Local-first repository audits</div><h1>Check before<br>you <span>commit.</span></h1><p>Catch risky workflows, configuration drift, and leaked credentials from your terminal, CI pipeline, or AI assistant.</p><div class="actions"><a class="button" href="#integrate">Start auditing <span aria-hidden="true">↗</span></a><a class="secondary" href="https://www.npmjs.com/package/ci-guard-mcp">npm package ↗</a><a class="secondary" href="https://github.com/carelessdept/ci-guard-mcp#readme">Read the docs</a></div><div class="note">Node 20+ · MIT license · Two runtime dependencies<br><span class="release">v0.1.0 · CLI, Composite GitHub Action &amp; MCP Server</span></div></div>
+<div class="terminal" aria-label="Illustrative audit output"><div class="terminal-top"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span>example audit / terminal</span></div><pre><span class="dim">$</span> npx ci-guard-mcp scan .
 
 <span class="yellow">.github/workflows/deploy.yml:8</span>
 ERROR workflow/script-injection
@@ -36,23 +36,22 @@ WARN env/undocumented
 <article class="card"><span class="number">03 / SECRETS</span><h3>Catch credentials before they travel.</h3><p>Recognize common token formats, private keys, and contextual high-entropy assignments. Scan actual staged blobs and redact every detected value.</p><span class="rule">secret/high-entropy</span></article>
 <article class="card"><span class="number">04 / DEPENDENCIES</span><h3>Keep installs predictable.</h3><p>Find competing lockfiles within a package, unencrypted dependency URLs, and unbounded version selectors such as * and latest.</p><span class="rule">lockfile/conflict</span></article>
 </div></section>
-<section id="integrate"><div class="section-heading"><div><div class="eyebrow">Meet your existing workflow</div><h2>One engine. Three entry points.</h2></div><p>Start from source today. npm commands and remote action references become available after the first release.</p></div><div class="modes">
-<article class="mode"><span class="number">TERMINAL</span><h3>Run a local check.</h3><p>Build the checkout and choose text, JSON, SARIF, or GitHub annotations.</p><pre class="codebox">npm ci --ignore-scripts
-npm run build
-node dist/cli.js scan . \
-  --fail-on warn</pre><a href="https://github.com/carelessdept/ci-guard-mcp#run-locally">CLI usage ↗</a></article>
-<article class="mode"><span class="number">GITHUB ACTION</span><h3>Give each PR a guard.</h3><p>Annotations, a readable job summary, and finding counts from a composite action.</p><pre class="codebox"># Local repository action
-- uses: ./
+<section id="integrate"><div class="section-heading"><div><div class="eyebrow">Meet your existing workflow</div><h2>One engine. Three entry points.</h2></div><p>Run directly via npx in your terminal, wire the composite action into GitHub Actions CI, or connect over stdio MCP.</p></div><div class="modes">
+<article class="mode"><span class="number">TERMINAL</span><h3>Run a local check.</h3><p>Audit any repository in text, JSON, SARIF 2.1.0, or GitHub annotations format.</p><pre class="codebox">npx ci-guard-mcp scan . \
+  --fail-on warn
+npx ci-guard-mcp scan . \
+  --format sarif &gt; findings.sarif</pre><a href="https://github.com/carelessdept/ci-guard-mcp#run-locally">CLI usage ↗</a></article>
+<article class="mode"><span class="number">GITHUB ACTION</span><h3>Give each PR a guard.</h3><p>Annotations, a readable job summary, and finding counts from a composite action.</p><pre class="codebox">- uses: carelessdept/ci-guard-mcp@release-0.1.0
   with:
     path: .
     fail-on: warn</pre><a href="https://github.com/carelessdept/ci-guard-mcp#github-action">Integration details ↗</a></article>
-<article class="mode"><span class="number">AI ASSISTANTS</span><h3>Audit before an agent commits.</h3><p>Four read-only tools over stdio. Paths stay within the selected launch root.</p><pre class="codebox">node dist/cli.js --mcp \
+<article class="mode"><span class="number">AI ASSISTANTS</span><h3>Audit before an agent commits.</h3><p>Four read-only tools over stdio. Paths stay within the selected launch root.</p><pre class="codebox">npx -y ci-guard-mcp --mcp \
   --root /path/to/repo
 
 # scan_repo
 # check_secret_leaks</pre><a href="https://github.com/carelessdept/ci-guard-mcp#mcp-server">MCP configuration ↗</a></article>
 </div></section>
-<section><div class="callout"><div><div class="eyebrow">Clear scope. Reviewable code.</div><h2>A guardrail,<br>with visible boundaries.</h2><p>Static checks cannot prove a repository is safe. Dynamic environment reads, encoded credentials, and remote workflow bodies need other review. Test fixtures and templates are excluded from secret scanning by default.</p><a href="https://github.com/carelessdept/ci-guard-mcp#boundaries-and-limitations">Read the detection limits ↗</a></div><ul class="checks"><li>No repository scripts are executed during scanning.</li><li>Source code stays on the machine running the audit.</li><li>Findings never contain detected secret values.</li><li>Ignore policy and official-action allowlists are configurable.</li><li>Excess-size files produce explicit warnings.</li><li>Open source, without adoption claims or badges for unrun CI.</li></ul></div></section>
+<section><div class="callout"><div><div class="eyebrow">Clear scope. Reviewable code.</div><h2>A guardrail,<br>with visible boundaries.</h2><p>Static checks cannot prove a repository is safe. Dynamic environment reads, encoded credentials, and remote workflow bodies need other review. Test fixtures and templates are excluded from secret scanning by default.</p><a href="https://github.com/carelessdept/ci-guard-mcp#boundaries-and-limitations">Read the detection limits ↗</a></div><ul class="checks"><li>No repository scripts are executed during scanning.</li><li>Source code stays on the machine running the audit.</li><li>Findings never contain detected secret values.</li><li>Ignore policy and official-action allowlists are configurable.</li><li>Excess-size files produce explicit warnings.</li><li>Deterministic JSON and SARIF 2.1.0 output for CI pipelines.</li></ul></div></section>
 </main><footer><span>ci-guard-mcp / MIT<br>Built for a quieter, safer review.</span><div><a href="https://github.com/carelessdept/ci-guard-mcp/blob/main/CONTRIBUTING.md">Contribute</a><a href="https://github.com/carelessdept/ci-guard-mcp/blob/main/SECURITY.md">Security</a><a href="https://github.com/carelessdept/ci-guard-mcp">Source ↗</a></div></footer>
 </div>
 </body>

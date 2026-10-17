@@ -1,27 +1,30 @@
 # ci-guard-mcp
 
+[![CI](https://github.com/carelessdept/ci-guard-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/carelessdept/ci-guard-mcp/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/ci-guard-mcp.svg)](https://www.npmjs.com/package/ci-guard-mcp)
+[![ci-guard-mcp MCP server](https://glama.ai/mcp/servers/carelessdept/ci-guard-mcp/badges/score.svg)](https://glama.ai/mcp/servers/carelessdept/ci-guard-mcp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 **One local audit engine. A CLI, a GitHub Action, and four MCP tools.**
 
 Catch risky GitHub workflows, undocumented environment variables, possible credentials, and conflicting dependency configuration before merging. Audits are deterministic, read-only, and run without sending source code to a service. Two runtime dependencies: `yaml` and `ignore`.
-
-> Initial release source. npm, Marketplace and Pages availability depends on the release and repository setup described below. This repository does not claim existing adoption, grants, or external certification.
 
 ## Run locally
 
 Requires Node.js 20 or later. Git is required for index scans and tracked-file selection.
 
 ```sh
-# From a source checkout, before the first npm release:
-npm ci --ignore-scripts
-npm run build
-node dist/cli.js scan .
-
-# Once published:
+# Run directly with npx:
 npx ci-guard-mcp scan . --fail-on warn
 npx ci-guard-mcp scan . --format json
 npx ci-guard-mcp scan . --format sarif > findings.sarif
 npx ci-guard-mcp scan . --auditor workflows --auditor lockfile
 npx ci-guard-mcp scan . --auditor secrets --staged
+
+# Or from a local source checkout:
+npm ci --ignore-scripts
+npm run build
+node dist/cli.js scan .
 ```
 
 Exit codes: **0** below threshold, **1** findings at or above threshold, **2** invalid arguments, configuration or I/O failure. `--fail-on error` is the default; `warn` also fails on warnings. Informational findings never fail a scan. Output formats are `text`, `json`, `sarif`, and `github`. `--root PATH` is equivalent to the positional scan directory. `--help` lists every flag.
@@ -150,10 +153,6 @@ npm pack --dry-run
 
 CI runs tests/typechecks/build/package checks on Node 20 and 22 across Linux, macOS and Windows. See [CONTRIBUTING.md](CONTRIBUTING.md) for regression tests and [SECURITY.md](SECURITY.md) for disclosure.
 
-Before first release: create the npm package under an authorized npm account, verify name availability, configure its trusted publisher for owner `carelessdept`, repo `ci-guard-mcp`, workflow `release.yml`, environment `npm`, allow direct `npm publish` in the trusted publisher settings, and protect that environment in GitHub. Initial package creation may require a manual authenticated npm publish before trusted publishing can be configured. Thereafter a matching `v<package.version>` tag runs checks, publishes with OIDC/provenance, and creates a GitHub Release. If publication succeeds but release creation fails, create the release for that tag manually; npm versions cannot be republished.
-
-Publish the action to Marketplace from GitHub's release UI after reviewing metadata and eligibility. Enable Pages from the default branch's `/docs` directory for the documentation site. These account-side enrollment steps are not performed by source code or the tag workflow. No npm credentials or grant applications belong in this repository.
-
 MIT licensed. Maintained openly through reproducible reports, focused changes and documented limitations.
 
-Protocol and release references: [MCP stdio](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports), [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/), [Marketplace publishing](https://docs.github.com/en/actions/how-tos/create-and-publish-actions/publish-in-github-marketplace).
+Protocol references: [MCP stdio](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports), [SARIF 2.1.0](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html).
