@@ -1,6 +1,6 @@
 {
   "name": "ci-guard-mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Local-first repository security and configuration audits for developers, CI and AI assistants.",
   "mcpName": "io.github.carelessdept/ci-guard-mcp",
   "type": "module",
