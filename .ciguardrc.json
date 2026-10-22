@@ -1,4 +1,4 @@
 {
-  "ignoreEnv": ["NODE_ENV", "CI", "PATH", "HOME", "GITHUB_STEP_SUMMARY", "GITHUB_OUTPUT"],
+  "ignoreEnv": ["NODE_ENV", "CI", "PATH", "HOME", "GITHUB_STEP_SUMMARY", "GITHUB_OUTPUT", "CI_GUARD_SANDBOX_ACTIVE"],
   "ignore": ["docs/"]
 }

@@ -25,8 +25,13 @@ const HARDENED_GIT_CONFIG_ARGS = [
   '-c', 'core.hooksPath=/dev/null',
   '-c', 'core.pager=cat',
   '-c', 'core.sshCommand=false',
+  '-c', 'core.gitProxy=false',
   '-c', 'core.askPass=false',
   '-c', 'protocol.allow=never',
+  '-c', 'http.proxy=',
+  '-c', 'https.proxy=',
+  '-c', 'credential.helper=',
+  '-c', 'uploadpack.allowFilter=false',
   '-c', 'diff.external=',
   '-c', 'filter.lfs.smudge=',
   '-c', 'filter.lfs.clean=',
@@ -58,6 +63,10 @@ function buildHardenedGitEnv(): NodeJS.ProcessEnv {
     GIT_OPTIONAL_LOCKS: '0',
     GIT_ASKPASS: 'echo',
     SSH_ASKPASS: 'echo',
+    NO_PROXY: '*',
+    http_proxy: '',
+    https_proxy: '',
+    ALL_PROXY: '',
   };
   for (const key of SAFE_ENV_KEYS) {
     if (process.env[key] !== undefined) {

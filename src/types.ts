@@ -18,7 +18,7 @@ export interface Config {
   maxFileBytes: number;
 }
 export interface AuditReport {
-  version: '0.1.0';
+  version: '0.2.0';
   findings: Finding[];
   summary: Record<Severity, number>;
   filesScanned: number;
@@ -29,6 +29,7 @@ export interface ScanOptions {
   root?: string;
   staged?: boolean;
   includeIgnored?: boolean;
+  noGit?: boolean;
   auditors?: Auditor[];
   config?: Partial<Config>;
 }

@@ -16,6 +16,8 @@ Requires Node.js 20 or later. Git is required for index scans and tracked-file s
 ```sh
 # Run directly with npx:
 npx ci-guard-mcp scan . --fail-on warn
+npx ci-guard-mcp scan . --sandbox
+npx ci-guard-mcp scan . --no-git
 npx ci-guard-mcp scan . --format json
 npx ci-guard-mcp scan . --format sarif > findings.sarif
 npx ci-guard-mcp scan . --auditor workflows --auditor lockfile
@@ -89,9 +91,10 @@ Paths resolve inside the launch root; parent traversal and symlinks escaping it 
 
 | Rule | Severity | Detects |
 | --- | --- | --- |
-| `workflow/pwn-request` | error | `pull_request_target` checkout with event-derived PR head ref/repository |
-| `workflow/script-injection` | error | GitHub event/head-ref expressions directly interpolated in `run` |
-| `workflow/unpinned-action` | warn | Remote actions/reusable workflows without 40-character SHAs; container actions without sha256 digests |
+| `workflow/pwn-request` | error | `pull_request_target` / GitLab MR checkout with event-derived PR head ref/repository |
+| `workflow/script-injection` | error | GitHub event/head-ref or GitLab MR/commit expressions directly interpolated in `run` / `script` |
+| `workflow/secret-exfiltration` | error | Direct `${{ secrets.* }}` or `${{ toJSON(secrets) }}` interpolation in `run` scripts |
+| `workflow/unpinned-action` | warn | Remote actions, reusable workflows, or GitLab `include` / `component` / `image` without immutable SHA/sha256 digests |
 | `workflow/missing-permissions` | warn | Missing top-level `permissions` |
 | `workflow/invalid-yaml` | error | Malformed workflow YAML, duplicate keys or non-mapping document |
 | `env/undocumented` | warn | Literal source references absent from `.env.example` / `.env.template` |
