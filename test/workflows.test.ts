@@ -49,7 +49,7 @@ test('A3: quoted closing braces and escaped single quotes do not bypass workflow
   const safeCases = `permissions: {}\non: pull_request\njobs:\n  a:\n    steps:\n      - run: echo "\${{ 'github.event.issue.title' }}"\n      - run: echo "\${{ github.event.pull_request.number }}"\n      - run: echo "\${{ github.event.issue.number }}"\n`;
   assert.deepEqual(audit(safeCases), []);
 });
-test('v0.2.0 (@bmosanlabs): detects direct secret interpolation and toJSON(secrets) log exfiltration in run blocks', () => {
+test('v0.2.0: detects direct secret interpolation and toJSON(secrets) log exfiltration in run blocks', () => {
   const leaky = [
     'permissions: {}',
     'on: push',
@@ -74,7 +74,7 @@ test('v0.2.0 (@bmosanlabs): detects direct secret interpolation and toJSON(secre
   ].join('\n');
   assert.deepEqual(audit(safe), []);
 });
-test('v0.2.0 (@KowalPrato4o): audits GitLab CI (.gitlab-ci.yml) for script injection, pwn requests, and unpinned includes/images', () => {
+test('v0.2.0: audits GitLab CI (.gitlab-ci.yml) for script injection, pwn requests, and unpinned includes/images', () => {
   const gitlabBody = [
     'stages: [test]',
     'image: node:20',

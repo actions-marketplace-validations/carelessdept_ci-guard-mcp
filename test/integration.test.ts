@@ -95,7 +95,7 @@ test('A8: missing or broken git in a directory with .git metadata fails closed i
     process.env.PATH = prevPath;
   }
 });
-test('v0.2.0 (@SayferSecurity): OS-boundary --sandbox and --no-git zero-subprocess mode block network egress and child hooks', async t => {
+test('v0.2.0: OS-boundary --sandbox and --no-git zero-subprocess mode block network egress and child hooks', async t => {
   const root = await repo(t, {
     '.env.example': 'API_URL=https://api.example.com\n',
     'src/app.ts': 'export const url = process.env.API_URL;\n',
@@ -149,7 +149,7 @@ test('v0.2.0 (@SayferSecurity): OS-boundary --sandbox and --no-git zero-subproce
     );
   }
 });
-test('v0.2.0 (@KolinHuang): Golden clean-repo benchmark suite passes all 4 auditors with zero false positives', async t => {
+test('v0.2.0: Golden clean-repo benchmark suite passes all 4 auditors with zero false positives', async t => {
   const shaCheckout = '11bd71901bbe5b1630ceea73d27597364c9af683';
   const shaNode = '49933ea5288caeca8642d1e84afbd3f7d6820020';
   const sha256Digest = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
